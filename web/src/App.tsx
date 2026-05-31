@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from "react";
 
+/* Uma interface define
+** a formato desse objeto.
+** Ou seja onde quer que eu
+** use, ele vai checar se ta comforme
+** a esse interface  
+*/
 interface Bookmark {
   id: number;
   title: string;
@@ -9,7 +15,14 @@ interface Bookmark {
 }
 
 export default function App() {
+  // useState armazena dados que mudam na tela (estado)
+  // [bookmarks, setBookmarks] -> valor atual e função pra atualizar
+  // Garante que Bookmark[] garante que objeto === interface
+  // ([]) -> começa como array vazio, os dados vêm da API depois
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+
+  // Estados dos campos do formulário — todos começam como string vazia
+  // TypeScript já infere o tipo string pelo valor inicial (""), sem precisar de <string>
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
   const [tagsInput, setTagsInput] = useState("");
@@ -17,64 +30,85 @@ export default function App() {
 
   const API_URL = "http://localhost:3000/bookmarks";
 
+  // Busca todos os bookmarks da API e atualiza o estado
   const fetchBookmarks = async () => {
     try {
-      const res = await fetch(API_URL);
-      const data = await res.json();
-      setBookmarks(data);
-    } catch (err) {
+      const res = await fetch(API_URL); // Pedi todos os bookmarks para a API
+      const data = await res.json();    // Converte a resposta de JSON para objeto JS e espera
+      setBookmarks(data);               // atualiza o estado com os bookmarks recebidos
+
+    } catch (err) { // captura qualquer erro de rede ou parsing
       console.error(`Erro ao buscar bookmark: ${err}`);
     }
   };
 
+  // busca os bookmarks assim que a página carrega
+  // apena uma vez
   useEffect(() => {
     fetchBookmarks();
   }, []);
 
+  // É aqui que cria novos bookmarks
+  // Manda o bookmark pra API quando o formulario é submetido
+  // o 'e' é um evento que acontece quando o salva um novo bookmark
   const handleSubmit = async (e: React.SubmitEvent) => {
+    // impede a página de recarregar quando o user salva um novo bookmark
     e.preventDefault();
+
+    // caso title e url estejam vazios permite que a operaçao conclua
     if (!title || !url) return;
 
+    // converte a string de tags em array limpo
+    // ex: "react, hooks, ts" -> ["react", "hooks", "ts"]
     const tagsArray = tagsInput
-      .split(",")
-      .map((t) => t.trim())
-      .filter((t) => t.length > 0);
+      .split(",")                   // separa por vírgula
+      .map((t) => t.trim())         // remove espaços extra de cada item
+      .filter((t) => t.length > 0); // remove itens vazios
 
     try {
       const res = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, url, tags: tagsArray }),
+        method: "POST", // define o método HTTP como POST, ou seja eu vou tó adicionando coisa
+        headers: { "Content-Type": "application/json" }, // avisa a API que estamos enviando JSON
+        body: JSON.stringify({ title, url, tags: tagsArray }), // converte o objeto JS para string JSON
       });
 
-      if (res.ok) {
-        setTitle("");
-        setUrl("");
-        setTagsInput("");
-        fetchBookmarks();
+      if (res.ok) {       // se der certo:
+        setTitle("");     // limpa o campo título
+        setUrl("");       // limpa o campo url
+        setTagsInput(""); // limpa o campo tags
+        fetchBookmarks(); // e recarrega a lista com o novo bookmark incluído
       }
     } catch (err) {
       console.error(`Error ao salvar: ${err}`);
     }
   };
 
-  const handleDelete = async (id: number) => {
+  // Deleta um bookmark da API pelo id e atualiza a lista
+  const handleDelete = async (id: number) => { // recebe o id do bookmark a ser deletado
     try {
+      // monta a URL com o id → ex: http://localhost:3000/bookmarks/5
+      // envia uma requisição DELETE para a API
       const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
-      if (res.ok) fetchBookmarks();
+      if (res.ok) fetchBookmarks(); // se der certo atualiza a lista
+
     } catch (err) {
       console.error(`Error ao deletar ${err}`);
     }
   };
 
-  const filteredBookmarks = bookmarks.filter((b) => {
+  // filtra os bookmarks em tempo real conforme o usuário digita na busca
+  const filteredBookmarks = bookmarks.filter((b) => { // percorre cada bookmark do array
     const matchText =
-      b.title.toLowerCase().includes(search.toLowerCase()) ||
-      b.url.toLowerCase().includes(search.toLowerCase());
-    const matchTag = b.tags.some((t) =>
-      t.toLowerCase().includes(search.toLowerCase()),
-    );
-    return matchText || matchTag;
+      b.title.toLowerCase().includes(search.toLowerCase()) || // busca no título
+      b.url.toLowerCase().includes(search.toLowerCase());     // ou na url
+      // .toLowerCase() em ambos os lados pra ser case-insensitive
+
+    const matchTag = b.tags.some((t) =>               // percorre as tags do bookmark
+      t.toLowerCase().includes(search.toLowerCase()), // verifica se alguma tag bate com a busca
+    ); 
+    // .some() -> retorna true se PELO MENOS UMA tag corresponder
+
+    return matchText || matchTag; // inclui o bookmark se bater no texto OU em alguma tag
   });
 
   return (
