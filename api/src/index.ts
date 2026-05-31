@@ -1,10 +1,12 @@
 import express from 'express';
+import cors from 'cors';
 import type { Request, Response } from 'express';
 import { db } from './db/index.js';
 import { bookmarks, tags, bookmarkTags } from './db/schema.js';
 import { eq } from 'drizzle-orm';
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 
 // 1. POST /bookmarks -> Criar bookmark e associar tags
