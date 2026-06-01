@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from "react";
 
-/* Uma interface define
-** a formato desse objeto.
-** Ou seja onde quer que eu
-** use, ele vai checar se ta comforme
-** a esse interface  
-*/
+// Interface: descreve o formato que um objeto deve ter.
+// Toda vez que você criar um "Bookmark", 
+// ele precisa ter exatamente esses campos
 interface Bookmark {
   id: number;
   title: string;
